@@ -2,71 +2,43 @@
 //  ContentView.swift
 //  BLEChatting
 //
-//  Created by 백상휘 on 11/24/24.
+//  Created by 백상휘 on 11/25/24.
 //
 
 import SwiftUI
-import SwiftData
-
-struct TestData: Identifiable {
-    let text: String
-    let id: UUID = UUID()
-}
 
 struct ContentView: View {
-//    @Environment(\.modelContext) private var modelContext
-//    @Query private var items: [Item]
-    @State private var items: [TestData] = [
-        .init(text: "First"),
-        .init(text: "Second"),
-        .init(text: "Third"),
+    @State var selection: MainTab = .list
+    @State var items = [
+        TestData(text: "First"),
+        TestData(text: "Second"),
+        TestData(text: "Third"),
     ]
-
+    
+    enum MainTab {
+        case list, second
+    }
+    
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        TestDetail(text: item.text)
-                    } label: {
-                        Text("To detail at \(item)")
+        TabView(selection: $selection) {
+            ChatList(items: items)
+                .tabItem {
+                    VStack {
+                        Image(systemName: "list.bullet")
+                        Text("List")
                     }
                 }
-//                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: {
-                        withAnimation {
-                            items.append(.init(text: "New Item \(items.count)"))
-                        }
-                    }) {
-                        Label("Add Item", systemImage: "plus")
+                .tag(MainTab.list)
+            RepositoryView(items: items)
+                .tabItem {
+                    VStack {
+                        Image(systemName: "swiftdata")
+                        Text("Repo")
                     }
                 }
-            }
-        } detail: {
-            Text("Select an item")
+                .tag(MainTab.list)
         }
     }
-
-//    private func addItem() {
-//        withAnimation {
-//            let newItem = Item(timestamp: Date())
-//            modelContext.insert(newItem)
-//        }
-//    }
-//
-//    private func deleteItems(offsets: IndexSet) {
-//        withAnimation {
-//            for index in offsets {
-//                modelContext.delete(items[index])
-//            }
-//        }
-//    }
 }
 
 #Preview {
