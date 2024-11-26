@@ -10,9 +10,13 @@ import SwiftData
 
 @main
 struct BLEChattingApp: App {
+    
+    private let useCaseFactory = UseCaseFactory()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
+        .environmentObject(useCaseFactory)
     }
 }
