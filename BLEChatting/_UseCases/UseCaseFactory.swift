@@ -19,7 +19,7 @@ import Combine
     private var chatProviderUseCase: ChatProviderUseCase!
     private var chatReponderUseCase: ChatResponderUseCase!
     
-    func getUseCase(_ manager: BLEManager) -> any ChatBLMInterface {
+    func getUseCase(_ manager: BLEManager) -> any ChatBLMInterface2 {
         switch manager {
         case .peripheral:
             if let chatProviderUseCase {
@@ -39,10 +39,10 @@ import Combine
     }
 }
 
-class AnyChatBLMInterface: ChatBLMInterface {
-    let shared: any ChatBLMInterface
+class AnyChatBLMInterface: ChatBLMInterface2 {
+    let shared: any ChatBLMInterface2
 
-    init<T: ChatBLMInterface>(_ value: T) {
+    init<T: ChatBLMInterface2>(_ value: T) {
         self.shared = value
     }
 }

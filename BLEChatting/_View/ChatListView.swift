@@ -14,7 +14,6 @@ struct TestData: Identifiable, Hashable {
 }
 
 struct ChatList: View {
-    @Environment(UseCaseFactory.self) private var factory: UseCaseFactory
     @State var items: [TestData]
     
     var body: some View {
@@ -25,11 +24,6 @@ struct ChatList: View {
                         NavigationLink(value: item) {
                             IssueListComponent(testData: item)
                                 .foregroundColor(Color.black)
-                        }
-                        Button {
-                            print((factory.getUseCase(.central) as? ChatResponderUseCase) == nil ? "It's Nil" : "It's not nil")
-                        } label: {
-                            Text(item.text)
                         }
                     }
                 }

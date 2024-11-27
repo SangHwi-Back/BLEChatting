@@ -8,16 +8,26 @@
 import SwiftUI
 
 struct ChatRoomView: View {
-    var text: String
+    @Environment(UseCaseFactory.self) private var factory: UseCaseFactory
+    @Environment(\.isDark) var isDark
+    @State var text: String
     
     var body: some View {
-        VStack {
-            Text("ChatRoomView")
-            Text(text)
+        VStack(spacing: 4) {
+            ScrollView {
+                ForEach(0..<20) {
+                    ChatElement(isLeft: $0.isMultiple(of: 2))
+                        .padding(5)
+                }
+            }
+            ChatBottomActionBar(text: $text)
         }
+        .navigationTitle(text)
+        .background(isDark ? Color.black : Color.white)
     }
 }
 
 #Preview {
     ChatRoomView(text: "Testing~~")
+        .environment(UseCaseFactory())
 }
