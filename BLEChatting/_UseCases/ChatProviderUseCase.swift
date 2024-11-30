@@ -9,10 +9,10 @@ import Foundation
 import CoreBluetooth
 
 class ChatProviderUseCase: ChatBLMProviderInterface {
-    let centralManager: CBPeripheralManager
+    let peripheralManager: CBPeripheralManager
     
-    required init(_ centralManager: CBPeripheralManager) {
-        self.centralManager = centralManager
+    required init(_ peripheralManager: CBPeripheralManager) {
+        self.peripheralManager = peripheralManager
     }
     
     func sendMessage(characteristicID: String, message: String, chatRoomID: String) {

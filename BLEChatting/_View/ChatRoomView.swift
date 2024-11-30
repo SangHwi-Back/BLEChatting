@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct ChatRoomView: View {
-    @Environment(UseCaseFactory.self) private var factory: UseCaseFactory
     @Environment(\.isDark) var isDark
     @State var text: String
     
@@ -29,5 +28,4 @@ struct ChatRoomView: View {
 
 #Preview {
     ChatRoomView(text: "Testing~~")
-        .environment(UseCaseFactory())
 }
