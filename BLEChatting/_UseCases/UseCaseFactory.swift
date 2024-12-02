@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreBluetooth
 import Combine
 
 @Observable class UseCaseFactory: NSObject, ObservableObject {
@@ -13,36 +14,23 @@ import Combine
     let blm = ChatBLM()
     
     enum BLEManager {
-        case central, peripheral
+        case central, peripheral(CBUUID)
     }
     
     private var chatProviderUseCase: ChatProviderUseCase!
     private var chatReponderUseCase: ChatResponderUseCase!
     
-    func getUseCase(_ manager: BLEManager) -> any ChatBLMInterface {
+    typealias ResultUseCase<Actions> = (any ChatBLMInterface<Actions>)
+    
+    func getUseCase<A>(_ manager: BLEManager) -> ResultUseCase<A>? {
+        var result: (any ChatBLMInterface)?
         switch manager {
-        case .peripheral:
-            if let chatProviderUseCase {
-                return chatProviderUseCase
-            } else {
-                chatProviderUseCase = ChatProviderUseCase(blm.peripheralManager)
-                return chatProviderUseCase
-            }
+        case .peripheral(let serviceID):
+            result = ChatProviderUseCase(blm.peripheralManager, serviceID: serviceID)
         case .central:
-            if let chatReponderUseCase {
-                return chatReponderUseCase
-            } else {
-                chatReponderUseCase = ChatResponderUseCase(blm.centralManager)
-                return chatReponderUseCase
-            }
+            result = ChatResponderUseCase(blm.centralManager)
         }
-    }
-}
-
-class AnyChatBLMInterface: ChatBLMInterface {
-    let shared: any ChatBLMInterface
-
-    init<T: ChatBLMInterface>(_ value: T) {
-        self.shared = value
+        
+        return result as? (any ChatBLMInterface<A>)
     }
 }

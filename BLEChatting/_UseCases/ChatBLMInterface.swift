@@ -8,19 +8,20 @@
 import Foundation
 import CoreBluetooth
 
-protocol ChatBLMInterface {}
+protocol ChatBLMInterface<Actions> {
+    associatedtype Actions
+    associatedtype ConcreteBLMType: ChatBLMInterface
+    var concrete: ConcreteBLMType { get }
+    func reduce(_ action: Actions)
+}
 
 protocol ChatBLMResponderInterface: ChatBLMInterface {
-    var centralManager: CBCentralManager { get }
-    init(_ centralManager: CBCentralManager)
-    func getMessagFromPeripheral(peripheralID: String, message: String)
-    func getDataFromPeripheral(peripheralID: String, data: Data)
-    func getDictFromPeripheral(peripheralID: String, dict: Dictionary<String, Any>)
+    init(_ centralManager: CBCentralManager, serviceID: CBUUID?)
+    func getMessagFromPeripheral()
+    func getDataFromPeripheral()
 }
 
 protocol ChatBLMProviderInterface: ChatBLMInterface {
-    var peripheralManager: CBPeripheralManager { get }
-    init(_ peripheralManager: CBPeripheralManager)
-    func sendMessage(characteristicID: String, message: String, chatRoomID: String)
-    func sendData(characteristicID: String, data: Data, chatRoomID: String)
+    init(_ peripheralManager: CBPeripheralManager, serviceID: CBUUID)
+    func sendMessage(characteristicID: CBUUID, message: String)
 }
