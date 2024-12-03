@@ -30,7 +30,6 @@ struct ChatRoomView: View {
         .background(isDark ? Color.black : Color.white)
         .onAppear(perform: {
             responder = factory.getUseCase(.central)
-            print("👍 \(responder == nil)")
             responder?.reduce(.scan)
         })
     }

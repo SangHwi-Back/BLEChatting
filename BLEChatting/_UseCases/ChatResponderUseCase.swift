@@ -10,7 +10,7 @@ import CoreBluetooth
 import CryptoKit
 
 class ChatResponderUseCase: NSObject, ChatBLMResponderInterface, ChatBLMInterface {
-    enum Actions { case scan, getMessage }
+    enum Actions { case scan, getMessage, getPeripherals((Set<CBPeripheral>) -> Void) }
     
     let centralManager: CBCentralManager
     var peripherals: Set<CBPeripheral> = []
@@ -62,6 +62,8 @@ class ChatResponderUseCase: NSObject, ChatBLMResponderInterface, ChatBLMInterfac
             scan()
         case .getMessage:
             getMessagFromPeripheral()
+        case .getPeripherals(let handler):
+            handler(peripherals)
         }
     }
 }

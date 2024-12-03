@@ -14,11 +14,10 @@ struct BLEChattingApp: App {
     private let useCaseFactory = UseCaseFactory()
     
     var body: some Scene {
-        print("colorScheme \(colorScheme)")
-        return WindowGroup {
+        WindowGroup {
             ContentView()
+                .environmentObject(useCaseFactory)
+                .environment(\.isDark, colorScheme == .dark)
         }
-        .environmentObject(useCaseFactory)
-        .environment(\.isDark, colorScheme == .dark)
     }
 }

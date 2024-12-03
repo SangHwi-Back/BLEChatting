@@ -32,11 +32,11 @@ struct ChatElement: View {
     private var _ContentsView: some View {
         HStack(alignment: .top, spacing: 4) {
             if isLeft {
-                __Thumbnail
+                PersonThumbnail()
                 __TextArea
             } else {
                 __TextArea
-                __Thumbnail
+                PersonThumbnail()
             }
         }
     }
@@ -55,19 +55,7 @@ struct ChatElement: View {
         .foregroundStyle(isDark ? .white : .black)
         .frame(alignment: .leading)
         .lineLimit(nil)
-//        .frame(maxWidth: 300)
         .padding(2)
-    }
-    
-    private var __Thumbnail: some View {
-        ZStack(alignment: .center) {
-            Circle()
-                .fill(Color.gray.opacity(0.8))
-            Image(systemName: "person")
-                .resizable()
-                .frame(width: 20, height: 20)
-        }
-        .frame(width: 30, height: 30, alignment: .center)
     }
 }
 

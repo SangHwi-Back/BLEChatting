@@ -8,6 +8,9 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.colorScheme) var colorScheme
+    private let useCaseFactory = UseCaseFactory()
+    
     @State var selection: MainTab = .list
     @State var items = [
         TestData(text: "First"),
@@ -22,6 +25,8 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selection) {
             ChatList(items: items)
+                .environmentObject(useCaseFactory)
+                .environment(\.isDark, colorScheme == .dark)
                 .tabItem {
                     VStack {
                         Image(systemName: "list.bullet")
