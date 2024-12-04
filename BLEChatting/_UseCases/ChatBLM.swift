@@ -16,7 +16,6 @@ class ChatBLM: NSObject, ObservableObject {
     private(set) var discoveredPeripheral: CBPeripheral?
     
     /// com.sanghwiback.BLEChatting
-    private let serviceUUID = CBUUID(string: "84f9487f-7a44-5d47-a53c-4561dbc9a424")
     private var characteristicUUID = CBUUID(string: "84f9487f-7a44-5d47-a53c-4561dbc9a424")
     
     // TODO: 간단히 String. 하지만 다른 타입도 지원하기 위해 제네릭 사용할지 여부는 고민 중.
@@ -32,13 +31,13 @@ class ChatBLM: NSObject, ObservableObject {
     
     // Peripheral 으로써 블루투스 통해 데이터 전달 시도
     private func startAdvertising() {
-        let advertisementData = [CBAdvertisementDataServiceUUIDsKey: [serviceUUID]]
+        let advertisementData = [CBAdvertisementDataServiceUUIDsKey: [CBUUID.TEST]]
         peripheralManager.startAdvertising(advertisementData)
     }
     
     // Central 으로써 블루투스 연결할 기기 스캔 시도
     private func startScanning() {
-        centralManager.scanForPeripherals(withServices: [serviceUUID],
+        centralManager.scanForPeripherals(withServices: [CBUUID.TEST],
                                           options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
     }
 }
@@ -61,7 +60,6 @@ extension ChatBLM: CBCentralManagerDelegate {
                         rssi RSSI: NSNumber) {
         
         guard Int(truncating: RSSI) > 50 else {
-            print("TOO WEAK!")
             startScanning()
             return
         }
@@ -72,7 +70,7 @@ extension ChatBLM: CBCentralManagerDelegate {
     // Manager 가 Peripheral 을 연결함
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         peripheral.delegate = self
-        peripheral.discoverServices([serviceUUID])
+        peripheral.discoverServices([CBUUID.TEST])
     }
 }
 
@@ -105,7 +103,7 @@ extension ChatBLM: CBPeripheralManagerDelegate {
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         switch peripheral.state {
         case .poweredOn:
-            let service = CBMutableService(type: serviceUUID, primary: true)
+            let service = CBMutableService(type: CBUUID.TEST, primary: true)
             let characteristic = CBMutableCharacteristic(type: characteristicUUID,
                                                          properties: [.read, .notify],
                                                          value: nil,

@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import CoreBluetooth
+import Combine
 
 struct TestData: Identifiable, Hashable {
     let text: String
@@ -20,12 +21,7 @@ struct ChatList: View {
     @Environment(UseCaseFactory.self) var useCaseFactory: UseCaseFactory
     
     @State var items: [TestData]
-    @State var name: String = ""
-    @State private var responder: Responder?
-    @State private var peripherals = Set<CBPeripheral>()
     @State private var showModal = false
-    
-    let timer = Timer.publish(every: 1, on: .current, in: .common).autoconnect()
     
     var body: some View {
         GeometryReader { proxy in
@@ -36,18 +32,17 @@ struct ChatList: View {
                             NavigationLink(value: item) {
                                 IssueListComponent(testData: item)
                                     .foregroundColor(Color.black)
+                                    .frame(maxWidth: 700)
                             }
                         }
                     }}
                     
-                    ChatListActionBar
+                    ChatListActionBar(showModal: $showModal)
                         .frame(height: 50)
-                        .background(Color.white)
-                        .shadow(radius: 2)
                         .padding(.vertical, 5)
                 }
                 .navigationDestination(for: TestData.self) { item in
-                    ChatRoomView(text: item.text)
+                    ChatRoomView(serviceID: .TEST)
                 }
             }
             .overlay {
@@ -55,11 +50,9 @@ struct ChatList: View {
                     ZStack {
                         Color.black.opacity(0.2)
                         CreateChatModalPopup(
-                            peripherals: $peripherals,
                             geometryProxy: proxy,
-                            onClose: {
-                                showModal = false
-                            }
+                            useCaseFactory: useCaseFactory,
+                            onClose: { showModal = false }
                         )
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
@@ -67,52 +60,60 @@ struct ChatList: View {
             }
             .animation(.spring(), value: showModal)
         }
-        .onAppear {
-            if responder == nil {
-                responder = useCaseFactory.getUseCase(.central)
+    }
+    
+    fileprivate struct ChatListActionBar: View {
+        @State private var name: String = ""
+        @Binding var showModal: Bool
+        var body: some View {
+            HStack {
+                TextField("이름을 입력하세요", text: $name)
+                    .textFieldStyle(.roundedBorder)
+                    .shadow(radius: 2)
+                Button { showModal = true } label: {
+                    Image(systemName: "plus.circle")
+                        .foregroundColor(.red)
+                }
             }
-            
-            responder?.reduce(.scan)
-        }
-        .onReceive(timer) { _ in
-            responder?.reduce(.getPeripherals({ peripherals in
-                self.peripherals = peripherals
-            }))
+            .padding(.horizontal)
         }
     }
     
-    private var ChatListActionBar: some View {
-        HStack {
-            TextField("이름을 입력하세요", text: $name)
-                .textFieldStyle(.roundedBorder)
-            Button {
-                showModal = true
-            } label: {
-                Image(systemName: "plus.circle")
-                    .foregroundColor(.red)
-            }
-        }
-        .padding(.horizontal)
-    }
-    
-    struct CreateChatModalPopup: View {
-        @Binding var peripherals: Set<CBPeripheral>
+    fileprivate struct CreateChatModalPopup: View {
+        @State private var peripherals: [CBPeripheral] = []
+        
+        @State private var subscriptions = Set<AnyCancellable>()
+        private var responder: Responder?
+        
+        private var scanPublisher: PassthroughSubject<[CBPeripheral], Never> = .init()
+        
         var geometryProxy: GeometryProxy
         var onClose: (() -> Void)?
         
         var width: CGFloat { geometryProxy.size.width }
         var height: CGFloat { geometryProxy.size.height }
         
+        init(geometryProxy: GeometryProxy,
+             useCaseFactory: UseCaseFactory,
+             onClose: (() -> Void)? = nil
+        ) {
+            self.geometryProxy = geometryProxy
+            self.onClose = onClose
+            self.responder = useCaseFactory.getUseCase(.central)
+        }
+        
         var body: some View {
             VStack {
                 ZStack {
-                    Text("누구와 채팅방을 만들까요?").font(.title2)
+                    Text("누구와 채팅방을 만들까요?")
+                        .font(.title2)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.2)
                         .padding(.horizontal, 45)
                     HStack {
                         Spacer()
-                        Button {
-                            onClose?()
-                        } label: {
+                        Button { onClose?() } label: {
                             Image(systemName: "xmark.circle")
                                 .foregroundStyle(.red)
                                 .frame(width: 40, height: 40)
@@ -124,6 +125,7 @@ struct ChatList: View {
                     List(Array($peripherals.wrappedValue), id: \CBPeripheral.name) { peripheral in
                         HStack(spacing: 4) {
                             PersonThumbnail()
+                                .frame(width: 40, height: 40)
                             Text(peripheral.name ?? "")
                         }
                     }
@@ -134,6 +136,15 @@ struct ChatList: View {
             .background(Color.white)
             .frame(height: 300)
             .cornerRadius(10)
+            .onAppear {
+                scanPublisher.sink { peripherals in
+                    print("🚦 peripherals count \(peripherals.count)")
+                    self.peripherals = peripherals
+                }
+                .store(in: &subscriptions)
+                responder?.reduce(.scan(scanPublisher))
+                
+            }
         }
     }
 }

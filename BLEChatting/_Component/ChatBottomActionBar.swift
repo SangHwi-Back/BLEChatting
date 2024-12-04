@@ -11,6 +11,8 @@ struct ChatBottomActionBar: View {
     @Environment(\.colorScheme) var colorScheme
     @Binding var text: String
     
+    var onPressSend: (() -> Void)?
+    
     var body: some View {
         
         let isDark = colorScheme == .dark
@@ -21,6 +23,7 @@ struct ChatBottomActionBar: View {
                 .shadow(color: .gray, radius: 3, x: 0.0, y: 0.0)
             HStack(spacing: 8) {
                 TextField("", text: $text, prompt: Text("Leave the message"))
+                    .onSubmit { onPressSend?() }
                 ZStack(alignment: .center) {
                     Circle()
                         .fill(LinearGradient(

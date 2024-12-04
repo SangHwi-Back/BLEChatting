@@ -11,7 +11,7 @@ import Combine
 
 @Observable class UseCaseFactory: NSObject, ObservableObject {
     
-    let blm = ChatBLM()
+//    let blm = ChatBLM()
     
     enum BLEManager {
         case central, peripheral(CBUUID)
@@ -26,9 +26,9 @@ import Combine
         var result: (any ChatBLMInterface)?
         switch manager {
         case .peripheral(let serviceID):
-            result = ChatProviderUseCase(blm.peripheralManager, serviceID: serviceID)
+            result = ChatProviderUseCase(serviceID: serviceID)
         case .central:
-            result = ChatResponderUseCase(blm.centralManager)
+            result = ChatResponderUseCase()
         }
         
         return result as? (any ChatBLMInterface<A>)

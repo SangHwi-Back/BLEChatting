@@ -8,19 +8,21 @@
 import Foundation
 import CoreBluetooth
 
-class ChatProviderUseCase: ChatBLMProviderInterface, ChatBLMInterface {
+class ChatProviderUseCase: NSObject, ChatBLMProviderInterface, ChatBLMInterface {
     enum Actions { case send(String) }
     
-    let peripheralManager: CBPeripheralManager
+    var peripheralManager: CBPeripheralManager!
     let serviceID: CBUUID
     var characteristicID: CBUUID?
     var concrete: ChatProviderUseCase {
         self
     }
     
-    required init(_ peripheralManager: CBPeripheralManager, serviceID: CBUUID) {
-        self.peripheralManager = peripheralManager
+    required init(serviceID: CBUUID) {
         self.serviceID = serviceID
+        super.init()
+        
+        self.peripheralManager = .init(delegate: self, queue: nil)
     }
     
     func sendMessage(characteristicID: CBUUID, message: String) {
@@ -35,21 +37,48 @@ class ChatProviderUseCase: ChatBLMProviderInterface, ChatBLMInterface {
                 permissions: .readable),
             onSubscribedCentrals: nil
         )
-        
-        if peripheralManager.isAdvertising == false {
-            peripheralManager.startAdvertising([
-                CBAdvertisementDataServiceUUIDsKey: serviceID
-            ])
-        }
     }
     
     func reduce(_ action: Actions) {
         switch action {
         case .send(let message):
-            guard let characteristicID else {
-                return
-            }
-            sendMessage(characteristicID: characteristicID, message: message)
+//            guard let characteristicID else {
+//                return
+//            }
+            sendMessage(characteristicID: CBUUID.CHARTEST, message: message)
         }
     }
+}
+
+extension ChatProviderUseCase: CBPeripheralManagerDelegate {
+    // Manager State 업데이트 됨
+    func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
+        switch peripheral.state {
+        case .poweredOn:
+            let service = CBMutableService(type: CBUUID.TEST, primary: true)
+            let characteristic = CBMutableCharacteristic(type: CBUUID.CHARTEST,
+                                                         properties: [.read, .notify],
+                                                         value: nil,
+                                                         permissions: .readable)
+            service.characteristics = [characteristic]
+            peripheralManager.add(service)
+            peripheralManager.startAdvertising([
+                CBAdvertisementDataServiceUUIDsKey: [serviceID],
+                CBAdvertisementDataLocalNameKey: "BLEChatting",
+            ])
+        default:
+            return
+        }
+    }
+    // Peripheral 이 ATT 프로토콜을 통해 읽기 요청을 받음.
+    // 값을 수신했으며, 응답을 보낼 수 있음.
+    func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
+        
+        guard request.characteristic.uuid == CBUUID.CHARTEST else { return }
+        
+        request.value = "HELLO".data(using: .utf8)
+        peripheralManager.respond(to: request, withResult: .success)
+    }
+    
+    
 }

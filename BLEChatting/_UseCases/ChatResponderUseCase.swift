@@ -8,47 +8,34 @@
 import Foundation
 import CoreBluetooth
 import CryptoKit
+import Combine
 
 class ChatResponderUseCase: NSObject, ChatBLMResponderInterface, ChatBLMInterface {
-    enum Actions { case scan, getMessage, getPeripherals((Set<CBPeripheral>) -> Void) }
+    enum Actions {
+        case scan(PassthroughSubject<[CBPeripheral], Never>),
+             getPeripherals((Set<CBPeripheral>) -> Void)
+    }
     
-    let centralManager: CBCentralManager
+    var centralManager: CBCentralManager!
     var peripherals: Set<CBPeripheral> = []
-    let serviceID: CBUUID
     var concrete: ChatResponderUseCase {
         self
     }
+    private var bluetoothOn = false
+    private var peripheralSubjects: PassthroughSubject<[CBPeripheral], Never>?
     
-    required init(_ centralManager: CBCentralManager, serviceID: CBUUID? = nil) {
-        self.centralManager = centralManager
-        
-        if let serviceID {
-            self.serviceID = serviceID
-        } else {
-            // MARK: - GENERATE UUID START
-            let inputData = Data(Date().description.utf8)
-            
-            let hashed = SHA256.hash(data: inputData)
-            let hashString = hashed.compactMap { String(format: "%02x", $0) }.joined()
-            
-            let uuidString = String(hashString.prefix(32))
-            let uuid = UUID(uuidString: uuidString.insertingSeparators())!
-            // MARK: - GENERATE UUID END
-            self.serviceID = CBUUID(nsuuid: uuid)
-        }
-    }
-    
-    func getMessagFromPeripheral() {
-        // Clean Architecture 에서 Coordinator 와 Interactor 의 역할을 각각 정리해줘
-    }
-    
-    func getDataFromPeripheral() {
-        
+    required init(serviceID: CBUUID? = nil) {
+        super.init()
+        self.centralManager = .init(delegate: self, queue: nil)
     }
     
     private func scan() {
+        guard bluetoothOn else {
+            return
+        }
+        
         centralManager.scanForPeripherals(
-            withServices: [serviceID],
+            withServices: [CBUUID.TEST],
             options: [
                 CBCentralManagerScanOptionAllowDuplicatesKey: true,
                 CBCentralManagerRestoredStateScanOptionsKey: true,
@@ -58,10 +45,8 @@ class ChatResponderUseCase: NSObject, ChatBLMResponderInterface, ChatBLMInterfac
     
     func reduce(_ action: Actions) {
         switch action {
-        case .scan:
-            scan()
-        case .getMessage:
-            getMessagFromPeripheral()
+        case .scan(let subject):
+            self.peripheralSubjects = subject
         case .getPeripherals(let handler):
             handler(peripherals)
         }
@@ -70,9 +55,9 @@ class ChatResponderUseCase: NSObject, ChatBLMResponderInterface, ChatBLMInterfac
 
 extension ChatResponderUseCase: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        
         switch central.state {
         case .poweredOn:
+            bluetoothOn = true
             scan()
         default:
             return
@@ -82,8 +67,7 @@ extension ChatResponderUseCase: CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager, 
                         didConnect peripheral: CBPeripheral) {
         
-        peripheral.discoverServices([serviceID])
-        peripherals.insert(peripheral)
+        peripheral.discoverServices([CBUUID.TEST])
     }
     
     func centralManager(_ central: CBCentralManager, 
@@ -91,8 +75,22 @@ extension ChatResponderUseCase: CBCentralManagerDelegate {
                         advertisementData: [String : Any],
                         rssi RSSI: NSNumber) {
         
-        if Int(truncating: RSSI) < 50 {
+        guard Int(truncating: RSSI) >= 50 else {
             scan()
+            return
+        }
+        
+        peripheral.delegate = self
+        peripherals.insert(peripheral)
+        peripheralSubjects?.send(Array(peripherals))
+    }
+}
+
+extension ChatResponderUseCase: CBPeripheralDelegate {
+    func peripheral(_ peripheral: CBPeripheral,
+                    didDiscoverServices error: (any Error)?) {
+        if let error {
+            print(error)
         }
     }
 }

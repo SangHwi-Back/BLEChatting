@@ -33,10 +33,12 @@ struct ChatElement: View {
         HStack(alignment: .top, spacing: 4) {
             if isLeft {
                 PersonThumbnail()
+                    .frame(width: 40, height: 40)
                 __TextArea
             } else {
                 __TextArea
                 PersonThumbnail()
+                    .frame(width: 40, height: 40)
             }
         }
     }

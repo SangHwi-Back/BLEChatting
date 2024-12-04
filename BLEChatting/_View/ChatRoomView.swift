@@ -6,15 +6,22 @@
 //
 
 import SwiftUI
+import CoreBluetooth
 
 struct ChatRoomView: View {
-    typealias A = ChatResponderUseCase.Actions
+    typealias A = ChatProviderUseCase.Actions
     
     @Environment(UseCaseFactory.self) private var factory: UseCaseFactory
     @Environment(\.isDark) var isDark
     
-    @State var text: String
-    @State var responder: (any ChatBLMInterface<A>)?
+    @State var text: String = ""
+    @State var provider: (any ChatBLMInterface<A>)?
+    
+    private var serviceID: CBUUID
+    
+    init(serviceID: CBUUID) {
+        self.serviceID = serviceID
+    }
     
     var body: some View {
         VStack(spacing: 4) {
@@ -24,18 +31,20 @@ struct ChatRoomView: View {
                         .padding(5)
                 }
             }
-            ChatBottomActionBar(text: $text)
+            ChatBottomActionBar(text: $text) {
+                provider?.reduce(.send(text))
+                text = ""
+            }
         }
-        .navigationTitle(text)
+        .navigationTitle("채팅방 ㅎㅎ")
         .background(isDark ? Color.black : Color.white)
         .onAppear(perform: {
-            responder = factory.getUseCase(.central)
-            responder?.reduce(.scan)
+            provider = factory.getUseCase(.peripheral(serviceID))
         })
     }
 }
 
 #Preview {
-    ChatRoomView(text: "Testing~~")
+    ChatRoomView(serviceID: .TEST)
         .environment(UseCaseFactory())
 }

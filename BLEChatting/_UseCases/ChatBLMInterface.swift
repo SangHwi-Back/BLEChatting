@@ -16,12 +16,10 @@ protocol ChatBLMInterface<Actions> {
 }
 
 protocol ChatBLMResponderInterface: ChatBLMInterface {
-    init(_ centralManager: CBCentralManager, serviceID: CBUUID?)
-    func getMessagFromPeripheral()
-    func getDataFromPeripheral()
+    init(serviceID: CBUUID?)
 }
 
 protocol ChatBLMProviderInterface: ChatBLMInterface {
-    init(_ peripheralManager: CBPeripheralManager, serviceID: CBUUID)
+    init(serviceID: CBUUID)
     func sendMessage(characteristicID: CBUUID, message: String)
 }
