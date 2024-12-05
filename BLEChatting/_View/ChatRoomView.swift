@@ -19,8 +19,11 @@ struct ChatRoomView: View {
     
     private var serviceID: CBUUID
     
-    init(serviceID: CBUUID) {
+    @ObservedObject var viewModel: ChatRoomViewModel
+    
+    init(serviceID: CBUUID, viewModel: ChatRoomViewModel) {
         self.serviceID = serviceID
+        self.viewModel = viewModel
     }
     
     var body: some View {
@@ -33,7 +36,6 @@ struct ChatRoomView: View {
             }
             ChatBottomActionBar(text: $text) {
                 provider?.reduce(.send(text))
-                text = ""
             }
         }
         .navigationTitle("채팅방 ㅎㅎ")
@@ -45,6 +47,6 @@ struct ChatRoomView: View {
 }
 
 #Preview {
-    ChatRoomView(serviceID: .TEST)
+    ChatRoomView(serviceID: .TEST, viewModel: ChatRoomViewModel(useCaseFactory: UseCaseFactory()))
         .environment(UseCaseFactory())
 }

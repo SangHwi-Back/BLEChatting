@@ -9,14 +9,9 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(\.colorScheme) var colorScheme
-    private let useCaseFactory = UseCaseFactory()
+    @Environment(UseCaseFactory.self) var useCaseFactory: UseCaseFactory
     
     @State var selection: MainTab = .list
-    @State var items = [
-        TestData(text: "First"),
-        TestData(text: "Second"),
-        TestData(text: "Third"),
-    ]
     
     enum MainTab {
         case list, second
@@ -24,7 +19,7 @@ struct ContentView: View {
     
     var body: some View {
         TabView(selection: $selection) {
-            ChatList(items: items)
+            ChatList(viewModel: ChatListViewModel(useCaseFactory: useCaseFactory))
                 .environmentObject(useCaseFactory)
                 .environment(\.isDark, colorScheme == .dark)
                 .tabItem {
@@ -34,7 +29,11 @@ struct ContentView: View {
                     }
                 }
                 .tag(MainTab.list)
-            RepositoryView(items: items)
+            RepositoryView(items: [
+                TestData(text: "First"),
+                TestData(text: "Second"),
+                TestData(text: "Third"),
+            ])
                 .tabItem {
                     VStack {
                         Image(systemName: "swiftdata")

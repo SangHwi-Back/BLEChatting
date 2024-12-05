@@ -12,17 +12,16 @@ import Combine
 
 class ChatResponderUseCase: NSObject, ChatBLMResponderInterface, ChatBLMInterface {
     enum Actions {
-        case scan(PassthroughSubject<[CBPeripheral], Never>),
+        case scan((any Subscriber<Set<CBPeripheral>, Never>)),
              getPeripherals((Set<CBPeripheral>) -> Void)
     }
     
     var centralManager: CBCentralManager!
-    var peripherals: Set<CBPeripheral> = []
     var concrete: ChatResponderUseCase {
         self
     }
     private var bluetoothOn = false
-    private var peripheralSubjects: PassthroughSubject<[CBPeripheral], Never>?
+    let peripheralSubjects = CurrentValueSubject<Set<CBPeripheral>, Never>([])
     
     required init(serviceID: CBUUID? = nil) {
         super.init()
@@ -45,16 +44,17 @@ class ChatResponderUseCase: NSObject, ChatBLMResponderInterface, ChatBLMInterfac
     
     func reduce(_ action: Actions) {
         switch action {
-        case .scan(let subject):
-            self.peripheralSubjects = subject
+        case .scan(let subscriber):
+            peripheralSubjects.receive(subscriber: subscriber)
         case .getPeripherals(let handler):
-            handler(peripherals)
+            handler(peripheralSubjects.value)
         }
     }
 }
 
 extension ChatResponderUseCase: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        print(#function)
         switch central.state {
         case .poweredOn:
             bluetoothOn = true
@@ -66,23 +66,24 @@ extension ChatResponderUseCase: CBCentralManagerDelegate {
     
     func centralManager(_ central: CBCentralManager, 
                         didConnect peripheral: CBPeripheral) {
-        
+        print(#function)
         peripheral.discoverServices([CBUUID.TEST])
     }
     
-    func centralManager(_ central: CBCentralManager, 
+    func centralManager(_ central: CBCentralManager,
                         didDiscover peripheral: CBPeripheral,
                         advertisementData: [String : Any],
                         rssi RSSI: NSNumber) {
-        
+        print(#function)
         guard Int(truncating: RSSI) >= 50 else {
             scan()
             return
         }
         
         peripheral.delegate = self
+        var peripherals = peripheralSubjects.value
         peripherals.insert(peripheral)
-        peripheralSubjects?.send(Array(peripherals))
+        peripheralSubjects.send(peripherals)
     }
 }
 
@@ -94,6 +95,7 @@ extension ChatResponderUseCase: CBPeripheralDelegate {
         }
     }
 }
+
 
 private extension String {
     func insertingSeparators() -> String {

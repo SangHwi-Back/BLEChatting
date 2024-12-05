@@ -18,59 +18,60 @@ struct TestData: Identifiable, Hashable {
 struct ChatList: View {
     typealias Responder = (any ChatBLMInterface<ChatResponderUseCase.Actions>)
     
-    @Environment(UseCaseFactory.self) var useCaseFactory: UseCaseFactory
-    
-    @State var items: [TestData]
-    @State private var showModal = false
+    @ObservedObject var viewModel: ChatListViewModel
     
     var body: some View {
         GeometryReader { proxy in
             NavigationStack {
                 VStack {
                     ScrollView { VStack {
-                        ForEach(items) { item in
+                        ForEach(viewModel.items) { item in
                             NavigationLink(value: item) {
                                 IssueListComponent(testData: item)
                                     .foregroundColor(Color.black)
-                                    .frame(maxWidth: 700)
                             }
                         }
                     }}
                     
-                    ChatListActionBar(showModal: $showModal)
+                    ChatListActionBar(name: $viewModel.userName, showModal: $viewModel.showModal)
                         .frame(height: 50)
+                        .background(Color.white)
+                        .shadow(radius: 2)
                         .padding(.vertical, 5)
                 }
                 .navigationDestination(for: TestData.self) { item in
-                    ChatRoomView(serviceID: .TEST)
+                    ChatRoomView(serviceID: .TEST, 
+                                 viewModel: ChatRoomViewModel(useCaseFactory: viewModel.useCaseFactory))
                 }
             }
             .overlay {
-                if showModal {
+                if viewModel.showModal {
                     ZStack {
                         Color.black.opacity(0.2)
                         CreateChatModalPopup(
                             geometryProxy: proxy,
-                            useCaseFactory: useCaseFactory,
-                            onClose: { showModal = false }
+                            peripherals: $viewModel.peripherals,
+                            showModal: $viewModel.showModal
                         )
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
                 }
             }
-            .animation(.spring(), value: showModal)
+            .animation(.spring(), value: viewModel.showModal)
         }
     }
     
     fileprivate struct ChatListActionBar: View {
-        @State private var name: String = ""
+        @Binding var name: String
         @Binding var showModal: Bool
+        
         var body: some View {
             HStack {
                 TextField("이름을 입력하세요", text: $name)
                     .textFieldStyle(.roundedBorder)
-                    .shadow(radius: 2)
-                Button { showModal = true } label: {
+                Button {
+                    showModal = true
+                } label: {
                     Image(systemName: "plus.circle")
                         .foregroundColor(.red)
                 }
@@ -80,12 +81,8 @@ struct ChatList: View {
     }
     
     fileprivate struct CreateChatModalPopup: View {
-        @State private var peripherals: [CBPeripheral] = []
-        
-        @State private var subscriptions = Set<AnyCancellable>()
-        private var responder: Responder?
-        
-        private var scanPublisher: PassthroughSubject<[CBPeripheral], Never> = .init()
+        @Binding private var peripherals: [CBPeripheral]
+        @Binding private var showModal: Bool
         
         var geometryProxy: GeometryProxy
         var onClose: (() -> Void)?
@@ -94,26 +91,24 @@ struct ChatList: View {
         var height: CGFloat { geometryProxy.size.height }
         
         init(geometryProxy: GeometryProxy,
-             useCaseFactory: UseCaseFactory,
-             onClose: (() -> Void)? = nil
-        ) {
+             peripherals: Binding<[CBPeripheral]>,
+             showModal: Binding<Bool>) {
             self.geometryProxy = geometryProxy
-            self.onClose = onClose
-            self.responder = useCaseFactory.getUseCase(.central)
+            self._peripherals = peripherals
+            self._showModal = showModal
         }
         
         var body: some View {
             VStack {
                 ZStack {
-                    Text("누구와 채팅방을 만들까요?")
-                        .font(.title2)
+                    Text("누구와 채팅방을 만들까요?").font(.title2)
                         .foregroundStyle(.black)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.2)
                         .padding(.horizontal, 45)
                     HStack {
                         Spacer()
-                        Button { onClose?() } label: {
+                        Button { 
+                            showModal = false
+                        } label: {
                             Image(systemName: "xmark.circle")
                                 .foregroundStyle(.red)
                                 .frame(width: 40, height: 40)
@@ -136,15 +131,6 @@ struct ChatList: View {
             .background(Color.white)
             .frame(height: 300)
             .cornerRadius(10)
-            .onAppear {
-                scanPublisher.sink { peripherals in
-                    print("🚦 peripherals count \(peripherals.count)")
-                    self.peripherals = peripherals
-                }
-                .store(in: &subscriptions)
-                responder?.reduce(.scan(scanPublisher))
-                
-            }
         }
     }
 }
