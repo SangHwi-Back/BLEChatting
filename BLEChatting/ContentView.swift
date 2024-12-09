@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct ContentView: View {
-    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.modelContext) private var context
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(UseCaseFactory.self) var useCaseFactory: UseCaseFactory
     
     @State var selection: MainTab = .list
@@ -19,7 +20,7 @@ struct ContentView: View {
     
     var body: some View {
         TabView(selection: $selection) {
-            ChatList(viewModel: ChatListViewModel(useCaseFactory: useCaseFactory))
+            ChatList(viewModel: ChatListViewModel(useCaseFactory))
                 .environmentObject(useCaseFactory)
                 .environment(\.isDark, colorScheme == .dark)
                 .tabItem {
@@ -45,7 +46,7 @@ struct ContentView: View {
     }
 }
 
-#Preview {
-    ContentView()
-        .environmentObject(UseCaseFactory())
-}
+//#Preview {
+//    ContentView()
+//        .environmentObject(UseCaseFactory())
+//}

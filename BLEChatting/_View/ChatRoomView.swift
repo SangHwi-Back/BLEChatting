@@ -46,7 +46,7 @@ struct ChatRoomView: View {
     }
 }
 
-#Preview {
-    ChatRoomView(serviceID: .TEST, viewModel: ChatRoomViewModel(useCaseFactory: UseCaseFactory()))
-        .environment(UseCaseFactory())
-}
+//#Preview {
+//    ChatRoomView(serviceID: .TEST, viewModel: ChatRoomViewModel(useCaseFactory: UseCaseFactory()))
+//        .environment(UseCaseFactory())
+//}

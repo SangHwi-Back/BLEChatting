@@ -6,20 +6,35 @@
 //
 
 import Foundation
+import SwiftData
 import CoreBluetooth
 
 protocol ChatBLMInterface<Actions> {
     associatedtype Actions
-    associatedtype ConcreteBLMType: ChatBLMInterface
-    var concrete: ConcreteBLMType { get }
     func reduce(_ action: Actions)
 }
 
 protocol ChatBLMResponderInterface: ChatBLMInterface {
+    associatedtype Actions
     init(serviceID: CBUUID?)
 }
 
 protocol ChatBLMProviderInterface: ChatBLMInterface {
+    associatedtype Actions
     init(serviceID: CBUUID)
     func sendMessage(characteristicID: CBUUID, message: String)
+}
+
+protocol ChatBLMListManageableInterface: ChatBLMInterface {
+    associatedtype Actions
+    var context: ModelContext { get }
+    init(context: ModelContext)
+}
+
+protocol ChatBLMMesssageManageableInterface: ChatBLMInterface {
+    associatedtype Actions
+    var context: ModelContext { get }
+    /// - Parameters:
+    ///    - chatRoomID: CBService's CBUUID
+    init(context: ModelContext, chatRoom: ChatRoom)
 }

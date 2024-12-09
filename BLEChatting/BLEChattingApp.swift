@@ -11,13 +11,24 @@ import SwiftData
 @main
 struct BLEChattingApp: App {
     @Environment(\.colorScheme) var colorScheme
-    private let useCaseFactory = UseCaseFactory()
+    private var modelContainer: ModelContainer = {
+        let schema = Schema([BLEChattingSchema.self])
+        let configuration = ModelConfiguration(schema: schema,
+                                               isStoredInMemoryOnly: true)
+        do {
+            return try ModelContainer(for: schema, 
+                                      configurations: [configuration])
+        } catch {
+            fatalError("😫")
+        }
+    }()
     
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(useCaseFactory)
+                .environmentObject(UseCaseFactory(modelContext: modelContainer.mainContext))
                 .environment(\.isDark, colorScheme == .dark)
         }
+        .modelContainer(modelContainer)
     }
 }

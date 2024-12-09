@@ -17,8 +17,12 @@ struct TestData: Identifiable, Hashable {
 
 struct ChatList: View {
     typealias Responder = (any ChatBLMInterface<ChatResponderUseCase.Actions>)
+    @Environment(UseCaseFactory.self) var useCaseFactory
+    @ObservedObject private var viewModel: ChatListViewModel
     
-    @ObservedObject var viewModel: ChatListViewModel
+    init(viewModel: ChatListViewModel) {
+        self.viewModel = viewModel
+    }
     
     var body: some View {
         GeometryReader { proxy in
@@ -27,7 +31,7 @@ struct ChatList: View {
                     ScrollView { VStack {
                         ForEach(viewModel.items) { item in
                             NavigationLink(value: item) {
-                                IssueListComponent(testData: item)
+                                IssueListComponent(text: item.name)
                                     .foregroundColor(Color.black)
                             }
                         }
@@ -40,20 +44,18 @@ struct ChatList: View {
                         .padding(.vertical, 5)
                 }
                 .navigationDestination(for: TestData.self) { item in
-                    ChatRoomView(serviceID: .TEST, 
-                                 viewModel: ChatRoomViewModel(useCaseFactory: viewModel.useCaseFactory))
+                    ChatRoomView(serviceID: .TEST,
+                                 viewModel: ChatRoomViewModel(useCaseFactory: useCaseFactory))
                 }
             }
             .overlay {
                 if viewModel.showModal {
                     ZStack {
                         Color.black.opacity(0.2)
-                        CreateChatModalPopup(
-                            geometryProxy: proxy,
-                            peripherals: $viewModel.peripherals,
-                            showModal: $viewModel.showModal
-                        )
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        CreateChatModalPopup(geometryProxy: proxy,
+                                             useCaseFactory: useCaseFactory,
+                                             showModal: $viewModel.showModal)
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
                 }
             }
@@ -81,8 +83,8 @@ struct ChatList: View {
     }
     
     fileprivate struct CreateChatModalPopup: View {
-        @Binding private var peripherals: [CBPeripheral]
         @Binding private var showModal: Bool
+        @ObservedObject private var viewModel: ChatListModalViewModel
         
         var geometryProxy: GeometryProxy
         var onClose: (() -> Void)?
@@ -91,11 +93,11 @@ struct ChatList: View {
         var height: CGFloat { geometryProxy.size.height }
         
         init(geometryProxy: GeometryProxy,
-             peripherals: Binding<[CBPeripheral]>,
+             useCaseFactory: UseCaseFactory,
              showModal: Binding<Bool>) {
             self.geometryProxy = geometryProxy
-            self._peripherals = peripherals
             self._showModal = showModal
+            self.viewModel = ChatListModalViewModel(useCaseFactory: useCaseFactory)
         }
         
         var body: some View {
@@ -117,13 +119,14 @@ struct ChatList: View {
                 }
                 .padding()
                 Group {
-                    List(Array($peripherals.wrappedValue), id: \CBPeripheral.name) { peripheral in
+                    List(viewModel.peripherals, id: \CBPeripheral.name) { peripheral in
                         HStack(spacing: 4) {
                             PersonThumbnail()
                                 .frame(width: 40, height: 40)
                             Text(peripheral.name ?? "")
                         }
                     }
+                    .toolbar { EditButton() }
                 }
                 .frame(maxHeight: .infinity)
                 .padding()

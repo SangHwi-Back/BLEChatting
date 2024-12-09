@@ -6,21 +6,24 @@
 //
 
 import Foundation
+import SwiftData
 import CoreBluetooth
 import Combine
 
 @Observable class UseCaseFactory: NSObject, ObservableObject {
-    
-//    let blm = ChatBLM()
-    
     enum BLEManager {
         case central, peripheral(CBUUID)
+        case roomList
+        case chatList(ChatRoom)
     }
     
-    private var chatProviderUseCase: ChatProviderUseCase!
-    private var chatReponderUseCase: ChatResponderUseCase!
-    
     typealias ResultUseCase<Actions> = (any ChatBLMInterface<Actions>)
+    
+    private var modelContext: ModelContext
+    
+    init(modelContext: ModelContext) {
+        self.modelContext = modelContext
+    }
     
     func getUseCase<A>(_ manager: BLEManager) -> ResultUseCase<A>? {
         var result: (any ChatBLMInterface)?
@@ -29,6 +32,10 @@ import Combine
             result = ChatProviderUseCase(serviceID: serviceID)
         case .central:
             result = ChatResponderUseCase()
+        case .roomList:
+            result = ChatListManageableUseCase(context: modelContext)
+        case .chatList(let chatRoom):
+            result = ChatMessageManageableUseCase(context: modelContext, chatRoom: chatRoom)
         }
         
         return result as? (any ChatBLMInterface<A>)

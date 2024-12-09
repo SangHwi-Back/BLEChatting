@@ -9,15 +9,26 @@ import Foundation
 import SwiftData
 
 @Model
+final class BLEChattingSchema {
+    var name: String
+    @Relationship(deleteRule: .cascade) var rooms: [ChatRoom]
+    
+    init(name: String, rooms: [ChatRoom]) {
+        self.name = name
+        self.rooms = rooms
+    }
+}
+
+@Model
 final class ChatRoom {
-    @Attribute(.unique) var id: UUID
+    @Attribute(.unique) var serviceID: UUID
     var name: String
     var createdAt: Date
     @Relationship(deleteRule: .cascade) var participants: [ChatParticipant]
     @Relationship(deleteRule: .cascade) var messages: [ChatMessage]
     
-    init(name: String) {
-        self.id = UUID()
+    init(serviceID: UUID, name: String) {
+        self.serviceID = serviceID
         self.name = name
         self.createdAt = Date()
         self.participants = []
@@ -30,26 +41,30 @@ final class ChatParticipant {
     @Attribute(.unique) var id: UUID
     var name: String
     
-    init(name: String) {
-        self.id = UUID()
+    init(id: UUID, name: String) {
+        self.id = id
         self.name = name
     }
 }
 
 @Model
 final class ChatMessage {
-    var id: UUID
+    @Attribute(.unique) var messageID: UUID
     var content: String
     var sentAt: Date
-    @Relationship(deleteRule: .cascade) var sender: ChatParticipant
-    @Relationship(deleteRule: .cascade) var chatRoom: ChatRoom
     
-    init(content: String, sender: ChatParticipant, chatRoom: ChatRoom) {
-        self.id = UUID()
+    @Relationship var sender: ChatParticipant
+    @Relationship var chatRoom: ChatRoom
+    
+    init(messageID: UUID,
+         content: String,
+         sender: ChatParticipant,
+         chatRoom: ChatRoom
+    ) {
+        self.messageID = messageID
         self.content = content
         self.sentAt = Date()
         self.sender = sender
         self.chatRoom = chatRoom
     }
 }
-

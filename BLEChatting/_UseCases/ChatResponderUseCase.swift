@@ -75,13 +75,16 @@ extension ChatResponderUseCase: CBCentralManagerDelegate {
                         advertisementData: [String : Any],
                         rssi RSSI: NSNumber) {
         print(#function)
-        guard Int(truncating: RSSI) >= 50 else {
+        var peripherals = peripheralSubjects.value
+        
+        guard Int(truncating: RSSI) >= 20 else {
+            peripherals.remove(peripheral)
+            peripheralSubjects.send(peripherals)
             scan()
             return
         }
         
         peripheral.delegate = self
-        var peripherals = peripheralSubjects.value
         peripherals.insert(peripheral)
         peripheralSubjects.send(peripherals)
     }

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct IssueListComponent: View {
-    @State var testData: TestData
+    @State var text: String
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 4)
@@ -16,7 +16,7 @@ struct IssueListComponent: View {
                 .opacity(0.7)
             VStack(alignment: .leading) {
                 Text("IssueListComponent")
-                Text(testData.text)
+                Text(text)
             }
         }
         .frame(height: 120)
@@ -25,5 +25,5 @@ struct IssueListComponent: View {
 }
 
 #Preview {
-    IssueListComponent(testData: .init(text: "TestData"))
+    IssueListComponent(text: "")
 }
