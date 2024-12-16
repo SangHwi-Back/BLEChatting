@@ -37,7 +37,9 @@ struct ChatList: View {
                         }
                     }}
                     
-                    ChatListActionBar(name: $viewModel.userName, showModal: $viewModel.showModal)
+                    ChatListActionBar(name: $viewModel.userName,
+                                      showModal: $viewModel.showModal,
+                                      inputError: $viewModel.error)
                         .frame(height: 50)
                         .background(Color.white)
                         .shadow(radius: 2)
@@ -66,11 +68,16 @@ struct ChatList: View {
     fileprivate struct ChatListActionBar: View {
         @Binding var name: String
         @Binding var showModal: Bool
+        @Binding var inputError: ChatListViewModel.InputError?
+        @FocusState private var isFocused: Bool
         
         var body: some View {
             HStack {
                 TextField("이름을 입력하세요", text: $name)
                     .textFieldStyle(.roundedBorder)
+                    .foregroundStyle(inputError == nil ? .white : .red)
+                    .tint(inputError == nil ? .white : .red)
+                    .focused($isFocused)
                 Button {
                     showModal = true
                 } label: {
